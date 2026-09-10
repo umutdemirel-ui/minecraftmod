@@ -1,5 +1,5 @@
 # Ultimate Life - Minecraft Forge 1.21.1
-# Values in ${...} are expanded from gradle.properties at build time.
+# Values written in braces are expanded from gradle.properties at build time.
 # Reference: https://docs.minecraftforge.net/en/1.21.x/gettingstarted/modfiles/#modstoml
 
 modLoader="javafml"
