@@ -13,8 +13,9 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Packet spam protection is a server responsibility: a client can send as many custom payloads as
  * it likes, so every server-bound packet is checked against this limiter before its handler runs.
- * Entries are evicted lazily (when a window is fully expired) and during a periodic sweep, so no
- * tick handler and no event subscription are needed.</p>
+ * A player's window is dropped as soon as it is empty (lazily on the next packet and during a
+ * periodic sweep), so the map stays bounded by the number of recently active players without needing
+ * a tick handler or an event subscription.</p>
  *
  * <p>Instances are thread safe: Forge dispatches payloads on the netty threads.</p>
  */
@@ -48,15 +49,6 @@ public final class PacketRateLimiter {
 
         window.addLast(now);
         return true;
-    }
-
-    /** Frees the state of a disconnected player immediately instead of waiting for the next sweep. */
-    public synchronized void forget(final UUID player) {
-        windows.remove(player);
-    }
-
-    public synchronized int trackedPlayers() {
-        return windows.size();
     }
 
     private void sweep(final long now) {

@@ -86,9 +86,15 @@ Faz 2'de ya silinir ya da gerçek bir bloğa dönüşür.
 
 ## CI
 
-`.github/workflows/build.yml` üç iş koşar:
+`.github/workflows/build.yml` dört iş koşar:
 
 1. **build** — `./gradlew build` + jar artifact.
 2. **datagen** — `./gradlew runData` ve üretilen kaynakların güncel olup olmadığının kontrolü.
 3. **server** — dedicated sunucuyu EULA kabul edilmiş şekilde başlatır, `Ultimate Life [ultimatelife]
    bootstrap complete` ve `Done (` satırlarını arar, log'u artifact olarak yükler.
+   (Bu iş aynı zamanda client/server ayrımının kanıtıdır: sunucu `com.ultimatelife.client` altındaki
+   hiçbir sınıfı yüklemeden açılıyor.)
+4. **client** — xvfb + llvmpipe ile başsız (headless) istemci açar; `Ultimate Life client runtime
+   ready` satırını arar (bu satır, oyunun pencere/GL bağlamını kurup modu yüklediğini ve yalnızca
+   istemcide çalışan kurulum kodunu çalıştırdığını kanıtlar). Ses cihazı olmadığı için ana menü
+   işareti bulunamazsa uyarı verir, hata vermez.
