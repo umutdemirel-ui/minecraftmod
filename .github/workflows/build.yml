@@ -176,13 +176,23 @@ jobs:
       - name: Install a headless GL stack
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libxext6 x11-utils
+          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libxext6 mesa-utils x11-utils
+
+      - name: Report the headless GL capabilities
+        run: |
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export GALLIUM_DRIVER=llvmpipe
+          xvfb-run -a -s "-screen 0 1280x720x24" glxinfo -B || true
 
       - name: Boot the dev client
         run: |
           chmod +x ./gradlew
           export LIBGL_ALWAYS_SOFTWARE=1
           export GALLIUM_DRIVER=llvmpipe
+          # Headless runners have no GL 4.5+ context, and Forge's early display window insists on one.
+          # Letting the game own its window (earlyWindowControl = false) is a CI-only workaround.
+          mkdir -p run/config
+          printf 'earlyWindowControl = false\n' > run/config/fml.toml
           xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient > client.log 2>&1 &
           GRADLE_PID=$!
           for _ in $(seq 1 150); do
@@ -220,3 +230,38 @@ jobs:
           name: log-client
           path: client.log
           if-no-files-found: warn
+
+  # TEMPORARY: publishes failing-run logs into the branch (the driving sandbox cannot read
+  # Actions logs). Deleted again as soon as the pipeline is green.
+  diagnostics:
+    name: Publish diagnostics
+    runs-on: ubuntu-latest
+    needs: [build, datagen, server, client]
+    if: always() && contains(needs.*.result, 'failure')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ci-logs
+
+      - name: Commit diagnostics
+        run: |
+          git config user.email "ci@users.noreply.github.com"
+          git config user.name "CI"
+          git add -Af ci-logs
+          if git diff --cached --quiet; then
+            echo "Nothing to publish"
+            exit 0
+          fi
+          git commit -m "chore(ci): publish build diagnostics [skip ci]"
+          for _ in 1 2 3 4 5; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Diagnostics published"
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
