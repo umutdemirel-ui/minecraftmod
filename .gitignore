@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+out/
+classes/
+
+# Forge development runs (client / server / data / gametest)
+run/
+run-data/
+run-server/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+*.launch
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Data generation cache (recreated on every run)
+src/generated/resources/.cache/

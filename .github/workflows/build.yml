@@ -1,0 +1,139 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Gradle build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build --stacktrace
+
+      - name: Upload mod jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultimatelife-jar
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+  datagen:
+    name: Data generation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run data generators
+        run: |
+          chmod +x ./gradlew
+          ./gradlew runData --stacktrace
+
+      - name: Verify generated resources are committed and up to date
+        run: |
+          git add -A -- src/generated
+          git -c user.email=ci@example.com -c user.name=CI diff --cached --exit-code -- src/generated \
+            || { echo "::error::src/generated is out of date. Run './gradlew runData' and commit the result."; exit 1; }
+
+      - name: Upload generated resources
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-resources
+          path: src/generated/resources
+          if-no-files-found: error
+
+  server:
+    name: Dedicated server smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare the dev server directory
+        run: |
+          mkdir -p run
+          echo "eula=true" > run/eula.txt
+          cat > run/server.properties <<'PROPS'
+          level-type=minecraft:flat
+          online-mode=false
+          max-players=2
+          view-distance=4
+          simulation-distance=4
+          level-seed=1
+          spawn-protection=0
+          PROPS
+
+      - name: Boot the dedicated server
+        run: |
+          chmod +x ./gradlew
+          ./gradlew runServer --stacktrace > server.log 2>&1 &
+          GRADLE_PID=$!
+          for _ in $(seq 1 120); do
+            if grep -q 'Done (' server.log; then break; fi
+            if ! kill -0 "$GRADLE_PID" 2>/dev/null; then break; fi
+            sleep 10
+          done
+          kill "$GRADLE_PID" 2>/dev/null || true
+          sleep 3
+          pkill -f 'userdev' 2>/dev/null || true
+          sleep 2
+          echo "----- last 120 lines -----"
+          tail -n 120 server.log
+          echo "----- checks -----"
+          grep -q 'Ultimate Life \[ultimatelife\] bootstrap complete' server.log \
+            || { echo "::error::The mod did not log its bootstrap line"; exit 1; }
+          grep -q 'Done (' server.log \
+            || { echo "::error::The dedicated server never finished starting"; exit 1; }
+          if grep -iE 'Ultimate Life.*(ERROR|Exception)' server.log; then
+            echo "::error::The mod logged an error"
+            exit 1
+          fi
+          echo "Dedicated server started with Ultimate Life loaded."
+
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log
+          path: server.log
+          if-no-files-found: warn
