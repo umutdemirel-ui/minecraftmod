@@ -237,7 +237,7 @@ jobs:
     name: Publish diagnostics
     runs-on: ubuntu-latest
     needs: [build, datagen, server, client]
-    if: always() && contains(needs.*.result, 'failure')
+    if: always()
     permissions:
       contents: write
     steps:
