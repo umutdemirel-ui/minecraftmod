@@ -116,4 +116,12 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+// Merge resources and classes into a single directory: FML discovers a mod as one directory, so the
+// dev runs (client / server / data) only see the @Mod class when both outputs share that directory.
+sourceSets.each {
+    def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
+    it.output.resourcesDir = dir
+    it.java.destinationDirectory = dir
+}
+
 idea.module { downloadJavadoc = downloadSources = true }
