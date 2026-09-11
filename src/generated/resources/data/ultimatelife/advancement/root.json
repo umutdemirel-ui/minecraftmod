@@ -1,0 +1,33 @@
+{
+  "criteria": {
+    "has_test_block": {
+      "conditions": {
+        "items": [
+          {
+            "items": "ultimatelife:ultimate_test_block"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png",
+    "description": {
+      "translate": "advancements.ultimatelife.root.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "ultimatelife:ultimate_test_block"
+    },
+    "title": {
+      "translate": "advancements.ultimatelife.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_test_block"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

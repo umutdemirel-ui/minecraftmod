@@ -1,0 +1,10 @@
+{
+  "itemGroup.ultimatelife": "Ultimate Life",
+
+  "block.ultimatelife.ultimate_test_block": "Ultimate Test Block",
+
+  "advancements.ultimatelife.root.title": "Ultimate Life",
+  "advancements.ultimatelife.root.description": "The foundation is in place.",
+
+  "network.ultimatelife.rate_limited": "Too many requests. Slow down."
+}

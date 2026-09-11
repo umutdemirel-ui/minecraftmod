@@ -1,0 +1,10 @@
+{
+  "itemGroup.ultimatelife": "Ultimate Life",
+
+  "block.ultimatelife.ultimate_test_block": "Ultimate Test Bloğu",
+
+  "advancements.ultimatelife.root.title": "Ultimate Life",
+  "advancements.ultimatelife.root.description": "Temel yapı kuruldu.",
+
+  "network.ultimatelife.rate_limited": "Çok fazla istek gönderiyorsun. Biraz yavaşla."
+}
